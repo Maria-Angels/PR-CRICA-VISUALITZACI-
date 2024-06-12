@@ -1,0 +1,86 @@
+---
+title: "practica viusualitzacio"
+author: "Maria Àngels Jaume"
+date: "2024-04-24"
+output: html_document
+---
+
+Carregam, seleccionam i netejam dades:
+
+( més info: https://www.kaggle.com/datasets/muhammetvarl/global-terrorism , https://www.kaggle.com/datasets/START-UMD/gtd )
+```{r}
+# https://www.kaggle.com/datasets/itssuru/global-terrorism
+
+dades <- read.csv("globalterrorism.csv", header = T)
+
+df <- dades[, c("eventid", "iyear", "imonth", "iday", "extended", "country", "country_txt", "region", "region_txt", "provstate", "city", "latitude", "longitude", "specificity", "vicinity", "crit1", "crit2", "crit3", "doubtterr", "multiple", "success", "suicide", "attacktype1", "attacktype1_txt", "targtype1", "targtype1_txt", "targsubtype1", "targsubtype1_txt", "corp1", "target1", "natlty1", "natlty1_txt", "gname", "guncertain1", "individual", "weaptype1", "weaptype1_txt", "nkill", "nwound", "property", "ishostkid", "dbsource", "INT_LOG", "INT_IDEO", "INT_MISC", "INT_ANY")]
+
+df <- na.omit(df)
+
+df$decada <- floor(df$iyear / 10) * 10
+
+str(df)
+```
+```{r}
+# PER ELS PUNTS DEL MAPA
+
+idx <- sample(nrow(df), 10000)
+mapa <- df[idx,]
+write.csv(mapa, file="mapa.csv")
+
+```
+
+
+```{r}
+library(dplyr)
+
+# COLOR MAPA, INTENSITAT SEGONS NOMBRE D'ATACS.
+per_pais <- df %>%
+  group_by(country_txt) %>%
+  count()
+
+per_pais 
+
+write.csv(per_pais, file=  "per_pais.csv")
+
+```
+
+```{r}
+# TIPUS D'ATAC PER REGIONS
+
+regio_tipus <- df %>%
+  group_by(attacktype1_txt, region_txt) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = attacktype1_txt, values_from = count, values_fill = list(count = 0))
+
+regio_tipus
+
+write.csv(regio_tipus, file=  "regio_tipus.csv")
+```
+
+```{r}
+# seleccionam els atacs de les dues regions més abundants
+
+df2 <- subset(df, region_txt %in% c("Middle East & North Africa", "South Asia"))
+
+# EXITS I FRACAS SEGONS OBJECTIU
+
+library(tidyr)
+exit_objectiu <- df2 %>%
+  group_by(region_txt,success,targtype1_txt) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  spread(key = success, value = count, fill = 0) %>%
+  rename(exit = `1`, fracas = `0`)
+
+exit_objectiu
+
+write.csv(exit_objectiu, file=  "exit_objectiu.csv")
+
+```
+
+
+
+
+
+
